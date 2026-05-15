@@ -73,7 +73,6 @@ def load_model():
     detection_model.to(device)
     detection_model.eval()
     print("Model loaded successfully!")
-
 @app.on_event("startup")
 async def startup_event():
     if GEMINI_API_KEY:
