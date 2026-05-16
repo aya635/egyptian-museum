@@ -10,10 +10,7 @@ RUN pip install torch==2.3.0+cpu torchvision==0.18.0+cpu \
     --index-url https://download.pytorch.org/whl/cpu
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir fastapi==0.111.0 uvicorn==0.30.1 \
-    python-multipart==0.0.9 Pillow==10.3.0 \
-    google-generativeai==0.7.2 edge-tts==6.1.12 \
-    huggingface-hub==0.23.4 nest-asyncio==1.6.0
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 
