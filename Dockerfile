@@ -21,4 +21,4 @@ RUN pip install --no-cache-dir fastapi==0.111.0 uvicorn==0.30.1 \
 COPY app.py .
 
 EXPOSE ${PORT:-8000}
-CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port $PORT"]
+CMD uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}
