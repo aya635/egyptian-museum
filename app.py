@@ -5,7 +5,7 @@ import torchvision.models as models
 import torchvision.transforms as transforms
 from PIL import Image
 import google.generativeai as genai
-import edge_tts
+from gtts import gTTS
 import asyncio
 import os
 import io
@@ -128,19 +128,14 @@ def generate_story(artifact_name, gender, language="ar"):
 
 # ==================== TTS ====================
 async def tts_async(text, gender="male", language="ar"):
-    if language == "ar":
-        voice = "ar-EG-ShakirNeural" if gender == "male" else "ar-EG-SalmaNeural"
-    else:
-        voice = "en-US-GuyNeural" if gender == "male" else "en-US-JennyNeural"
-
-    communicate = edge_tts.Communicate(text, voice)
+    lang = "ar" if language == "ar" else "en"
+    tts = gTTS(text=text, lang=lang)
     tmp = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)
-    await communicate.save(tmp.name)
+    tts.save(tmp.name)
     with open(tmp.name, "rb") as f:
         audio = f.read()
     os.unlink(tmp.name)
     return audio
-
 # ==================== ENDPOINTS ====================
 @app.get("/")
 def home():
