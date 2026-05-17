@@ -1,11 +1,12 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
 from PIL import Image
 import google.generativeai as genai
-from gtts import gTTS
+import edge_tts
 import asyncio
 import os
 import io
@@ -13,6 +14,15 @@ import tempfile
 from huggingface_hub import hf_hub_download
 
 app = FastAPI(title="Egyptian Museum TTS API")
+
+# ==================== CORS ====================
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ==================== CONFIG ====================
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
@@ -73,12 +83,12 @@ def load_model():
     detection_model.to(device)
     detection_model.eval()
     print("Model loaded successfully!")
+
 @app.on_event("startup")
 async def startup_event():
+    load_model()
     if GEMINI_API_KEY:
         genai.configure(api_key=GEMINI_API_KEY)
-    import threading
-    threading.Thread(target=load_model, daemon=True).start()
 
 # ==================== PREPROCESS ====================
 preprocess = transforms.Compose([
@@ -128,14 +138,19 @@ def generate_story(artifact_name, gender, language="ar"):
 
 # ==================== TTS ====================
 async def tts_async(text, gender="male", language="ar"):
-    lang = "ar" if language == "ar" else "en"
-    tts = gTTS(text=text, lang=lang)
+    if language == "ar":
+        voice = "ar-EG-ShakirNeural" if gender == "male" else "ar-EG-SalmaNeural"
+    else:
+        voice = "en-US-GuyNeural" if gender == "male" else "en-US-JennyNeural"
+
+    communicate = edge_tts.Communicate(text, voice)
     tmp = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)
-    tts.save(tmp.name)
+    await communicate.save(tmp.name)
     with open(tmp.name, "rb") as f:
         audio = f.read()
     os.unlink(tmp.name)
     return audio
+
 # ==================== ENDPOINTS ====================
 @app.get("/")
 def home():
@@ -177,3 +192,4 @@ async def predict_audio(
         media_type="audio/mpeg",
         headers={"Content-Disposition": "attachment; filename=story.mp3"}
     )
+    
